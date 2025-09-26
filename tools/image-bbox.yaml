@@ -1,0 +1,124 @@
+identity:
+  name: "image-bbox"
+  author: "xwang152-jack"
+  label:
+    en_US: "Image Bounding Box"
+    zh_Hans: "Image Bounding Box"
+    pt_BR: "Image Bounding Box"
+description:
+  human:
+    en_US: "A plugin for drawing bounding boxes and labels on images with annotation data visualization"
+    zh_Hans: "图像标注绘制工具插件，用于在图像上绘制边界框和标签，实现标注数据可视化"
+    pt_BR: "A plugin for drawing bounding boxes and labels on images with annotation data visualization"
+  llm: "A plugin for drawing bounding boxes and labels on images with annotation data visualization"
+parameters:
+  - name: image_data
+    type: string
+    required: true
+    label:
+      en_US: Image Data
+      zh_Hans: 图像数据
+      pt_BR: Dados da Imagem
+    human_description:
+      en_US: "Image data in URL or Base64 format"
+      zh_Hans: "图像数据，支持URL或Base64格式"
+      pt_BR: "Dados da imagem em formato URL ou Base64"
+    llm_description: "Image data in URL or Base64 format"
+    form: llm
+  - name: annotations
+    type: string
+    required: true
+    label:
+      en_US: Annotations
+      zh_Hans: 标注数据
+      pt_BR: Anotações
+    human_description:
+      en_US: "Annotation data in JSON format containing bounding boxes and labels"
+      zh_Hans: "JSON格式的标注数据，包含边界框和标签信息"
+      pt_BR: "Dados de anotação em formato JSON contendo caixas delimitadoras e rótulos"
+    llm_description: "Annotation data in JSON format containing bounding boxes and labels"
+    form: llm
+  - name: box_color
+    type: string
+    required: false
+    default: "#ff0000"
+    label:
+      en_US: Box Color
+      zh_Hans: 边界框颜色
+      pt_BR: Cor da Caixa
+    human_description:
+      en_US: "Color of bounding boxes (hex format, default: #ff0000)"
+      zh_Hans: "边界框颜色（十六进制格式，默认：#ff0000）"
+      pt_BR: "Cor das caixas delimitadoras (formato hex, padrão: #ff0000)"
+    llm_description: "Color of bounding boxes in hex format"
+    form: form
+  - name: text_color
+    type: string
+    required: false
+    default: "#ffffff"
+    label:
+      en_US: Text Color
+      zh_Hans: 文本颜色
+      pt_BR: Cor do Texto
+    human_description:
+      en_US: "Color of label text (hex format, default: #ffffff)"
+      zh_Hans: "标签文本颜色（十六进制格式，默认：#ffffff）"
+      pt_BR: "Cor do texto do rótulo (formato hex, padrão: #ffffff)"
+    llm_description: "Color of label text in hex format"
+    form: form
+  - name: line_width
+    type: number
+    required: false
+    default: 2
+    label:
+      en_US: Line Width
+      zh_Hans: 线宽
+      pt_BR: Largura da Linha
+    human_description:
+      en_US: "Width of bounding box lines (default: 2)"
+      zh_Hans: "边界框线宽（默认：2）"
+      pt_BR: "Largura das linhas da caixa delimitadora (padrão: 2)"
+    llm_description: "Width of bounding box lines"
+    form: form
+  - name: font_size
+    type: number
+    required: false
+    default: 16
+    label:
+      en_US: Font Size
+      zh_Hans: 字体大小
+      pt_BR: Tamanho da Fonte
+    human_description:
+      en_US: "Size of label text font (default: 16)"
+      zh_Hans: "标签文本字体大小（默认：16）"
+      pt_BR: "Tamanho da fonte do texto do rótulo (padrão: 16)"
+    llm_description: "Size of label text font"
+    form: form
+  - name: coordinate_type
+    type: select
+    required: false
+    default: "relative"
+    options:
+      - value: "relative"
+        label:
+          en_US: "Relative (0-999)"
+          zh_Hans: "相对坐标 (0-999)"
+          pt_BR: "Relativo (0-999)"
+      - value: "absolute"
+        label:
+          en_US: "Absolute (pixels)"
+          zh_Hans: "绝对坐标 (像素)"
+          pt_BR: "Absoluto (pixels)"
+    label:
+      en_US: Coordinate Type
+      zh_Hans: 坐标类型
+      pt_BR: Tipo de Coordenada
+    human_description:
+      en_US: "Type of coordinates in bbox: relative (0-999) or absolute (pixels)"
+      zh_Hans: "边界框坐标类型：相对坐标(0-999)或绝对坐标(像素)"
+      pt_BR: "Tipo de coordenadas na bbox: relativo (0-999) ou absoluto (pixels)"
+    llm_description: "Type of coordinates in bbox: relative (0-999) or absolute (pixels)"
+    form: form
+extra:
+  python:
+    source: tools/image-bbox.py
