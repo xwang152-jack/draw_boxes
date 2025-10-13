@@ -12,7 +12,7 @@ A Dify tool plugin for image annotation visualization. It receives image data an
 ## Key Features
 
 - **Annotation Drawing**: Draw bounding boxes and labels on images
-- **Flexible Coordinates**: Support both relative (0-999) and absolute (pixel) coordinates
+- **Flexible Coordinates**: Support both relative (0-1000) and absolute (pixel) coordinates
 - **Custom Styling**: Customizable colors, line width, and font size
 - **Multiple Formats**: Support various image and annotation formats
 - **Error Handling**: Comprehensive parameter validation
@@ -73,7 +73,7 @@ A Dify tool plugin for image annotation visualization. It receives image data an
 
 ### Coordinate Types
 
-**Relative Coordinates (0-999)**:
+**Relative Coordinates (0-1000)**:
 - `bbox`: [100, 200, 300, 400] → converted to pixel coordinates
 - Default mode for better compatibility
 

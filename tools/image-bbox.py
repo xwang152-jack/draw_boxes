@@ -336,16 +336,51 @@ class ImageMarkTool(Tool):
         annotated_image = image.copy()
         draw = ImageDraw.Draw(annotated_image)
         
+        # 计算基于图像尺寸的缩放因子（使用更温和的缩放算法）
+        # 确保缩放因子在 0.5-1.5 之间，避免过度缩放
+        scale_factor = 0.5 + 0.5 * (min(image.width, image.height) / 1000.0)
+        
+        # 计算实际字体大小，并设置合理的最小值和最大值限制
+        actual_font_size = int(font_size * scale_factor)
+        actual_font_size = max(8, min(actual_font_size, 120))  # 最小8像素，最大120像素
+        
+        # 计算实际线框宽度，并设置合理的最小值和最大值限制
+        actual_line_width = int(line_width * scale_factor)
+        actual_line_width = max(1, min(actual_line_width, 50))  # 最小1像素，最大50像素
+        
+        # 添加调试信息，显示缩放计算过程
+        print(f"Debug: Image size: {image.width}x{image.height}")
+        print(f"Debug: Scale factor: {scale_factor:.2f}")
+        print(f"Debug: Font size: {font_size} -> {actual_font_size} (scale: {scale_factor:.2f})")
+        print(f"Debug: Line width: {line_width} -> {actual_line_width} (scale: {scale_factor:.2f})")
+        
         # 尝试加载字体
-        try:
-            # 尝试使用系统默认字体
-            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", font_size)
-        except:
+        font = None
+        font_loaded = False
+        
+        # 尝试多种字体路径
+        font_paths = [
+            "/System/Library/Fonts/Arial.ttf",
+            "/System/Library/Fonts/Helvetica.ttc",
+            "/System/Library/Fonts/Times.ttc",
+            "/System/Library/Fonts/Courier.ttc"
+        ]
+        
+        for font_path in font_paths:
             try:
-                # 备用字体
-                font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", font_size)
+                font = ImageFont.truetype(font_path, actual_font_size)
+                font_loaded = True
+                break
+            except (OSError, IOError):
+                continue
+        
+        # 如果所有TrueType字体都加载失败，使用默认字体
+        if not font_loaded:
+            try:
+                # 尝试使用PIL的默认字体，但设置大小
+                font = ImageFont.load_default()
+                # 注意：PIL的默认字体不支持大小设置，所以我们需要特殊处理
             except:
-                # 使用默认字体
                 font = ImageFont.load_default()
         
         for annotation in annotations:
@@ -365,11 +400,11 @@ class ImageMarkTool(Tool):
                 
                 # 根据坐标类型进行转换
                 if coordinate_type == 'relative':
-                    # 将相对坐标(0-999)转换为真实像素坐标
-                    x1 = (x1 / 999.0) * image.width
-                    y1 = (y1 / 999.0) * image.height
-                    x2 = (x2 / 999.0) * image.width
-                    y2 = (y2 / 999.0) * image.height
+                    # 将相对坐标(0-1000)转换为真实像素坐标
+                    x1 = (x1 / 1000.0) * image.width
+                    y1 = (y1 / 1000.0) * image.height
+                    x2 = (x2 / 1000.0) * image.width
+                    y2 = (y2 / 1000.0) * image.height
                 # 如果是absolute类型，直接使用原始坐标
                 
                 # 确保坐标在图像范围内
@@ -379,7 +414,7 @@ class ImageMarkTool(Tool):
                 y2 = max(0, min(y2, image.height))
                 
                 # 绘制边界框
-                draw.rectangle([x1, y1, x2, y2], outline=box_color, width=line_width)
+                draw.rectangle([x1, y1, x2, y2], outline=box_color, width=actual_line_width)
                 
                 # 绘制标签文本
                 if label:
@@ -387,18 +422,60 @@ class ImageMarkTool(Tool):
                     if confidence < 1.0:
                         text += f" ({confidence:.2f})"
                     
-                    # 计算文本位置
-                    text_y = max(0, y1 - font_size - 5)
+                    # 计算文本位置，使用缩放后的字体大小和间距
+                    text_spacing = max(2, int(5 * scale_factor))  # 确保最小间距
+                    
+                    # 获取文本边界框来计算准确的文本高度
+                    try:
+                        text_bbox = draw.textbbox((0, 0), text, font=font)
+                        text_height = text_bbox[3] - text_bbox[1]
+                        text_width = text_bbox[2] - text_bbox[0]
+                    except:
+                        # 如果textbbox不可用，使用估算值
+                        text_height = actual_font_size if font_loaded else int(actual_font_size * 0.8)
+                        text_width = len(text) * (actual_font_size // 2) if font_loaded else len(text) * int(actual_font_size * 0.4)
+                    
+                    # 计算文本Y位置，确保不会超出图像边界
+                    text_y = y1 - text_height - text_spacing
+                    if text_y < 0:
+                        # 如果文本会超出上边界，放在边界框内部
+                        text_y = y1 + text_spacing
+                    
+                    # 计算文本X位置，确保不会超出图像边界
+                    text_x = x1
+                    if text_x + text_width > image.width:
+                        text_x = max(0, image.width - text_width)
                     
                     # 绘制文本背景
-                    bbox_text = draw.textbbox((x1, text_y), text, font=font)
-                    draw.rectangle(bbox_text, fill=box_color)
+                    try:
+                        # 使用实际的文本边界框
+                        bbox_text = draw.textbbox((text_x, text_y), text, font=font)
+                        # 添加一些内边距
+                        padding = max(1, int(2 * scale_factor))
+                        bg_bbox = [
+                            bbox_text[0] - padding,
+                            bbox_text[1] - padding,
+                            bbox_text[2] + padding,
+                            bbox_text[3] + padding
+                        ]
+                        draw.rectangle(bg_bbox, fill=box_color)
+                    except:
+                        # 如果textbbox不可用，使用估算的背景
+                        padding = max(1, int(2 * scale_factor))
+                        bg_bbox = [
+                            text_x - padding,
+                            text_y - padding,
+                            text_x + text_width + padding,
+                            text_y + text_height + padding
+                        ]
+                        draw.rectangle(bg_bbox, fill=box_color)
                     
                     # 绘制文本
-                    draw.text((x1, text_y), text, fill=text_color, font=font)
+                    draw.text((text_x, text_y), text, fill=text_color, font=font)
                     
-            except Exception:
-                # 跳过有问题的标注
+            except Exception as e:
+                # 跳过有问题的标注，但记录错误信息用于调试
+                print(f"Debug: Error processing annotation {annotation}: {e}")
                 continue
         
         return annotated_image

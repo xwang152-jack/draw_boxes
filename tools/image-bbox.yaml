@@ -101,9 +101,9 @@ parameters:
     options:
       - value: "relative"
         label:
-          en_US: "Relative (0-999)"
-          zh_Hans: "相对坐标 (0-999)"
-          pt_BR: "Relativo (0-999)"
+          en_US: "Relative (0-1000)"
+          zh_Hans: "相对坐标 (0-1000)"
+          pt_BR: "Relativo (0-1000)"
       - value: "absolute"
         label:
           en_US: "Absolute (pixels)"
@@ -114,10 +114,10 @@ parameters:
       zh_Hans: 坐标类型
       pt_BR: Tipo de Coordenada
     human_description:
-      en_US: "Type of coordinates in bbox: relative (0-999) or absolute (pixels)"
-      zh_Hans: "边界框坐标类型：相对坐标(0-999)或绝对坐标(像素)"
-      pt_BR: "Tipo de coordenadas na bbox: relativo (0-999) ou absoluto (pixels)"
-    llm_description: "Type of coordinates in bbox: relative (0-999) or absolute (pixels)"
+      en_US: "Type of coordinates in bbox: relative (0-1000) or absolute (pixels)"
+      zh_Hans: "边界框坐标类型：相对坐标(0-1000)或绝对坐标(像素)"
+      pt_BR: "Tipo de coordenadas na bbox: relativo (0-1000) ou absoluto (pixels)"
+    llm_description: "Type of coordinates in bbox: relative (0-1000) or absolute (pixels)"
     form: form
 extra:
   python:
