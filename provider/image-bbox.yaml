@@ -54,7 +54,7 @@ identity:
 #         en_US: "Access Token"
 
 tools:
-  - tools/image-bbox.yaml
+  - tools/image_bbox.yaml
 extra:
   python:
     source: provider/image-bbox.py

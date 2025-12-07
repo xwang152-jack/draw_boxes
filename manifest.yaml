@@ -1,4 +1,4 @@
-version: 1.1.0
+version: 1.2.0
 type: plugin
 author: xwang152-jack
 name: image-bbox
@@ -13,7 +13,6 @@ description:
   zh_Hans: 图像标注绘制工具插件，用于在图像上绘制边界框和标签，实现标注数据可视化
   pt_BR: A plugin for drawing bounding boxes and labels on images with annotation data visualization
 icon: icon.svg
-icon_dark: icon-dark.svg
 resource:
   memory: 268435456
   permission: {}

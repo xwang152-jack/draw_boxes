@@ -12,19 +12,19 @@ description:
     pt_BR: "A plugin for drawing bounding boxes and labels on images with annotation data visualization"
   llm: "A plugin for drawing bounding boxes and labels on images with annotation data visualization"
 parameters:
-  - name: image_data
-    type: string
+  - name: image_file
+    type: file
     required: true
     label:
-      en_US: Image Data
-      zh_Hans: 图像数据
-      pt_BR: Dados da Imagem
+      en_US: Image File
+      zh_Hans: 图像文件
+      pt_BR: Arquivo de Imagem
     human_description:
-      en_US: "Image data in URL or Base64 format"
-      zh_Hans: "图像数据，支持URL或Base64格式"
-      pt_BR: "Dados da imagem em formato URL ou Base64"
-    llm_description: "Image data in URL or Base64 format"
-    form: llm
+      en_US: "Image file to annotate with bounding boxes"
+      zh_Hans: "需要标注边界框的图像文件"
+      pt_BR: "Arquivo de imagem para anotar com caixas delimitadoras"
+    llm_description: "Image file to draw bounding boxes and labels on"
+    form: form
   - name: annotations
     type: string
     required: true
@@ -121,4 +121,4 @@ parameters:
     form: form
 extra:
   python:
-    source: tools/image-bbox.py
+    source: tools/image_bbox.py

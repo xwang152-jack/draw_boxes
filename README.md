@@ -1,51 +1,29 @@
 # Image Bounding Box Plugin
 
 **Author:** xwang152-jack  
-**Version:** 1.0.0  
+**Version:** 1.2.0  
 **Type:** Tool Plugin  
 **Contact:** xwang152@163.com
 
 ## Overview
 
-A Dify tool plugin for image annotation visualization. It receives image data and annotation information from vision models, then returns images with drawn annotations. Perfect for visualizing object detection and image segmentation results.
+A Dify tool plugin for image annotation visualization. It receives image files and annotation information, then returns images with drawn bounding boxes and labels. Perfect for visualizing object detection and image segmentation results.
 
 ## Key Features
 
 - **Annotation Drawing**: Draw bounding boxes and labels on images
+- **Dify File Support**: Native support for Dify file objects (recommended)
 - **Flexible Coordinates**: Support both relative (0-1000) and absolute (pixel) coordinates
+- **CJK Font Support**: Optimized font loading for Chinese/Japanese/Korean labels
 - **Custom Styling**: Customizable colors, line width, and font size
-- **Multiple Formats**: Support various image and annotation formats
 - **Error Handling**: Comprehensive parameter validation
-
-## Supported Image Formats
-
-### Dify File Object (Recommended)
-```json
-{
-  "#files#": [
-    {
-      "dify_model_identity": "__dify__file__",
-      "extension": ".jpeg",
-      "filename": "example.jpeg",
-      "mime_type": "image/jpeg", 
-      "url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...",
-      "type": "image"
-    }
-  ]
-}
-```
-
-### Traditional Formats
-- **Base64 with prefix**: `data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...`
-- **Pure Base64**: `/9j/4AAQSkZJRgABAQAAAQABAAD...`
-- **URL**: `https://example.com/image.jpg`
 
 ## Parameters
 
 ### Required
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `image_data` | string | Image data (URL or Base64) |
+| `image_file` | file | Image file to annotate |
 | `annotations` | string | Annotation data (JSON string) |
 
 ### Optional
@@ -81,38 +59,12 @@ A Dify tool plugin for image annotation visualization. It receives image data an
 - `bbox`: [50, 100, 150, 200] → used directly as pixel coordinates
 - Set `coordinate_type: "absolute"` to use this mode
 
-## Usage Examples
+## Usage in Dify Workflow
 
-### Basic Usage
-```python
-result = image_mark_tool.invoke({
-    "image_data": "https://example.com/image.jpg",
-    "annotations": '''
-    {
-      "annotations": [
-        {
-          "bbox": [100, 100, 300, 200],
-          "label": "cat",
-          "confidence": 0.95
-        }
-      ]
-    }
-    '''
-})
-```
-
-### Custom Styling with Absolute Coordinates
-```python
-result = image_mark_tool.invoke({
-    "image_data": base64_image,
-    "annotations": annotations,
-    "coordinate_type": "absolute",
-    "box_color": "#00ff00",
-    "text_color": "#000000",
-    "line_width": 3,
-    "font_size": 20
-})
-```
+1. Add the "Image Bounding Box" tool node to your workflow
+2. Connect an image file to the `image_file` parameter
+3. Provide annotation JSON from a vision model or other source
+4. The tool outputs an annotated image with bounding boxes
 
 ## Output Format
 
@@ -120,10 +72,9 @@ result = image_mark_tool.invoke({
 ```json
 {
   "success": true,
-  "result_image_base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
   "annotation_count": 2,
   "image_size": {"width": 800, "height": 600},
-  "message": "Successfully drew 2 annotations"
+  "message": "成功绘制2个标注"
 }
 ```
 
@@ -153,6 +104,18 @@ result = image_mark_tool.invoke({
 - Line width range: 1-20
 - Font size range: 8-72
 
+## CJK Font Support
+
+For proper Chinese/Japanese/Korean label display, ensure your Dify environment has CJK fonts installed:
+
+```bash
+# Debian/Ubuntu
+apt-get install -y fonts-noto-cjk
+
+# Alpine Linux
+apk add font-noto-cjk
+```
+
 ## Installation
 
 ```bash
@@ -165,15 +128,20 @@ See [PRIVACY.md](PRIVACY.md) for privacy policy.
 
 ## Changelog
 
+### v1.2.0 (2025-12-07)
+- **Breaking Change**: Changed `image_data` (string) to `image_file` (file type) for better Dify integration
+- Added native Dify File object support
+- Improved CJK font loading priority for Chinese/Japanese/Korean labels
+- Enhanced debug logging for troubleshooting
+
+### v1.1.1
+- Bug fixes and stability improvements
+
 ### v1.0.0 (2025-09-27)
-- Full Dify file object support
+- Initial release
 - Relative and absolute coordinate modes
 - Smart format detection
-- Production-ready release
 
 ## Support
 
 Contact: xwang152@163.com or submit an issue.
-
-
-

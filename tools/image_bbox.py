@@ -8,13 +8,14 @@ from typing import Any
 from PIL import Image, ImageDraw, ImageFont
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
+from dify_plugin.file.file import File
 
 
 class ImageMarkTool(Tool):
     def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage]:
         try:
-            # 获取参数
-            image_data = tool_parameters.get('image_data', '')
+            # 获取参数 - 使用新的 image_file 参数名
+            image_file = tool_parameters.get('image_file')
             annotations_str = tool_parameters.get('annotations', '')
             box_color = tool_parameters.get('box_color', '#ff0000')
             text_color = tool_parameters.get('text_color', '#ffffff')
@@ -22,11 +23,14 @@ class ImageMarkTool(Tool):
             font_size = int(tool_parameters.get('font_size', 16))
             coordinate_type = tool_parameters.get('coordinate_type', 'relative')
             
+            # 调试日志
+            print(f"Debug: image_file type = {type(image_file)}, value = {image_file}")
+            
             # 验证必需参数
-            if not image_data:
+            if not image_file:
                 yield self.create_json_message({
                     "success": False,
-                    "error": "image_data parameter is required",
+                    "error": "image_file parameter is required",
                     "error_code": 400
                 })
                 return
@@ -38,6 +42,13 @@ class ImageMarkTool(Tool):
                     "error_code": 400
                 })
                 return
+            
+            # 清理 annotations_str (去除可能的反引号或空格)
+            if isinstance(annotations_str, str):
+                annotations_str = annotations_str.strip().strip('`').strip()
+                # 处理可能的 markdown json 块 ```json ... ```
+                if annotations_str.startswith('json'):
+                    annotations_str = annotations_str[4:].strip()
             
             # 验证参数范围
             if line_width < 1 or line_width > 20:
@@ -74,11 +85,11 @@ class ImageMarkTool(Tool):
                 return
             
             # 加载图像
-            image = self._load_image(image_data)
+            image = self._load_image(image_file)
             if image is None:
                 yield self.create_json_message({
                     "success": False,
-                    "error": "Failed to load image. The image URL may be invalid, rate-limited, or inaccessible. Please check the image URL or try a different image source.",
+                    "error": "Failed to load image. The image file may be invalid or corrupted. Please check the image file and try again.",
                     "error_code": 404
                 })
                 return
@@ -238,95 +249,120 @@ class ImageMarkTool(Tool):
             return False
     
     def _load_image(self, image_data) -> Image.Image:
-        """加载图像数据"""
+        """加载图像数据 - 支持 Dify File 对象和多种格式"""
         try:
-            # 检查是否为Dify文件对象格式
-            if isinstance(image_data, dict) and "#files#" in image_data:
-                # Dify文件对象格式
-                files = image_data.get("#files#", [])
-                if files and len(files) > 0:
-                    file_info = files[0]
-                    # 优先使用url，如果没有则使用remote_url
-                    image_url = file_info.get("url") or file_info.get("remote_url")
+            print(f"Debug: _load_image called with type: {type(image_data)}")
+            
+            # 1. 优先处理 Dify File 对象
+            if isinstance(image_data, File):
+                print(f"Debug: Processing Dify File object")
+                # 尝试使用 blob 属性获取图像数据
+                try:
+                    image_bytes = image_data.blob
+                    if image_bytes:
+                        print(f"Debug: Got image bytes from blob, size: {len(image_bytes)}")
+                        return Image.open(BytesIO(image_bytes)).convert('RGB')
+                except Exception as e:
+                    print(f"Debug: Failed to get blob: {e}")
+                
+                # 如果 blob 不可用，尝试使用 URL
+                try:
+                    # 尝试获取 URL (可能是 url 或 remote_url 属性)
+                    image_url = getattr(image_data, 'url', None) or getattr(image_data, 'remote_url', None)
                     if image_url:
-                        # 检查是否为base64格式
-                        if image_url.startswith('data:image'):
-                            # Base64格式（带前缀）
-                            base64_data = image_url.split(',')[1]
-                            image_bytes = base64.b64decode(base64_data)
+                        print(f"Debug: Got URL from File object: {image_url[:100]}...")
+                        return self._load_image_from_url(image_url)
+                except Exception as e:
+                    print(f"Debug: Failed to get URL from File: {e}")
+                
+                # 尝试获取 transfer_method 和对应数据
+                try:
+                    transfer_method = getattr(image_data, 'transfer_method', None)
+                    print(f"Debug: File transfer_method: {transfer_method}")
+                    
+                    if transfer_method == 'remote_url':
+                        url = getattr(image_data, 'remote_url', None) or getattr(image_data, 'url', None)
+                        if url:
+                            return self._load_image_from_url(url)
+                    elif transfer_method == 'local_file':
+                        # 对于本地文件,尝试使用 blob
+                        image_bytes = image_data.blob
+                        if image_bytes:
                             return Image.open(BytesIO(image_bytes)).convert('RGB')
-                        elif image_url.startswith('http'):
-                            # HTTP URL格式
-                            response = requests.get(image_url, timeout=30)
-                            response.raise_for_status()
-                            return Image.open(BytesIO(response.content)).convert('RGB')
-                        else:
-                            # 尝试作为纯base64处理
-                            try:
-                                image_bytes = base64.b64decode(image_url)
-                                return Image.open(BytesIO(image_bytes)).convert('RGB')
-                            except:
-                                pass
+                except Exception as e:
+                    print(f"Debug: Failed to process File by transfer_method: {e}")
+                
                 return None
-            elif isinstance(image_data, str):
-                # 清理字符串：去除前后空格和反引号
+            
+            # 2. 处理字典格式 (兼容旧格式)
+            if isinstance(image_data, dict):
+                print(f"Debug: Processing dict format")
+                if "#files#" in image_data:
+                    files = image_data.get("#files#", [])
+                    if files and len(files) > 0:
+                        file_info = files[0]
+                        image_url = file_info.get("url") or file_info.get("remote_url")
+                        if image_url:
+                            return self._load_image_from_url(image_url)
+                return None
+            
+            # 3. 处理字符串格式 (URL 或 Base64)
+            if isinstance(image_data, str):
+                print(f"Debug: Processing string format, length: {len(image_data)}")
                 cleaned_data = image_data.strip().strip('`').strip()
                 
+                # 尝试解析为 JSON
                 try:
-                    # 尝试解析为JSON（可能是Dify文件对象的字符串格式）
                     parsed_data = json.loads(cleaned_data)
                     if isinstance(parsed_data, dict) and "#files#" in parsed_data:
                         return self._load_image(parsed_data)
                 except (json.JSONDecodeError, ValueError):
                     pass
                 
-                # 原有的处理逻辑
-                if cleaned_data.startswith('http'):
-                    # URL格式
-                    try:
-                        response = requests.get(cleaned_data, timeout=30)
-                        response.raise_for_status()
-                        
-                        # 检查响应状态码
-                        if response.status_code == 429:
-                            print(f"Debug: Rate limited (429) for URL: {cleaned_data}")
-                            return None
-                        elif response.status_code != 200:
-                            print(f"Debug: HTTP error {response.status_code} for URL: {cleaned_data}")
-                            return None
-                            
-                        # 检查内容类型
-                        content_type = response.headers.get('content-type', '').lower()
-                        if not content_type.startswith('image/'):
-                            print(f"Debug: Invalid content type '{content_type}' for URL: {cleaned_data}")
-                            return None
-                            
-                        # 检查内容长度
-                        if len(response.content) == 0:
-                            print(f"Debug: Empty response content for URL: {cleaned_data}")
-                            return None
-                            
-                        return Image.open(BytesIO(response.content)).convert('RGB')
-                    except requests.exceptions.RequestException as e:
-                        print(f"Debug: Request failed for URL {cleaned_data}: {e}")
-                        return None
-                elif cleaned_data.startswith('data:image'):
-                    # Base64格式（带前缀）
-                    base64_data = cleaned_data.split(',')[1]
-                    image_bytes = base64.b64decode(base64_data)
-                    return Image.open(BytesIO(image_bytes)).convert('RGB')
-                else:
-                    # 纯Base64格式
-                    image_bytes = base64.b64decode(cleaned_data)
-                    return Image.open(BytesIO(image_bytes)).convert('RGB')
-            else:
-                # 直接传递的字典对象（非字符串）
-                if isinstance(image_data, dict):
-                    return self._load_image(image_data)
+                return self._load_image_from_url(cleaned_data)
+            
+            print(f"Debug: Unsupported image_data type: {type(image_data)}")
+            return None
+            
         except Exception as e:
             print(f"Debug: _load_image exception: {e}")
             import traceback
             traceback.print_exc()
+            return None
+    
+    def _load_image_from_url(self, url_or_data: str) -> Image.Image:
+        """从 URL 或 Base64 加载图像"""
+        try:
+            if url_or_data.startswith('http'):
+                response = requests.get(url_or_data, timeout=30)
+                response.raise_for_status()
+                
+                if response.status_code != 200:
+                    print(f"Debug: HTTP error {response.status_code}")
+                    return None
+                
+                content_type = response.headers.get('content-type', '').lower()
+                if content_type and not content_type.startswith('image/'):
+                    print(f"Debug: Invalid content type '{content_type}'")
+                    return None
+                
+                if len(response.content) == 0:
+                    print(f"Debug: Empty response content")
+                    return None
+                
+                return Image.open(BytesIO(response.content)).convert('RGB')
+                
+            elif url_or_data.startswith('data:image'):
+                base64_data = url_or_data.split(',')[1]
+                image_bytes = base64.b64decode(base64_data)
+                return Image.open(BytesIO(image_bytes)).convert('RGB')
+            else:
+                # 尝试作为纯 Base64 处理
+                image_bytes = base64.b64decode(url_or_data)
+                return Image.open(BytesIO(image_bytes)).convert('RGB')
+                
+        except Exception as e:
+            print(f"Debug: _load_image_from_url exception: {e}")
             return None
     
     def _draw_annotations(self, image: Image.Image, annotations: list, 
@@ -358,28 +394,49 @@ class ImageMarkTool(Tool):
         font = None
         font_loaded = False
         
-        # 尝试多种字体路径
+        # 尝试多种字体路径 - 优先使用支持中文的字体
         font_paths = [
+            # 支持中文的字体 (优先)
+            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+            "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+            "/usr/share/fonts/wqy-microhei/wqy-microhei.ttc",
+            "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+            # Debian/Ubuntu 中文字体
+            "/usr/share/fonts/truetype/arphic/uming.ttc",
+            "/usr/share/fonts/truetype/arphic/ukai.ttc",
+            # Alpine Linux 中文字体
+            "/usr/share/fonts/noto/NotoSansCJK-Regular.ttc",
+            # macOS 中文字体 (本地开发环境)
+            "/System/Library/Fonts/PingFang.ttc",
+            "/System/Library/Fonts/STHeiti Light.ttc",
+            "/System/Library/Fonts/STHeiti Medium.ttc",
+            "/Library/Fonts/Arial Unicode.ttf",
+            # 其他通用字体
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
             "/System/Library/Fonts/Arial.ttf",
             "/System/Library/Fonts/Helvetica.ttc",
-            "/System/Library/Fonts/Times.ttc",
-            "/System/Library/Fonts/Courier.ttc"
         ]
         
         for font_path in font_paths:
             try:
                 font = ImageFont.truetype(font_path, actual_font_size)
                 font_loaded = True
+                print(f"Debug: Successfully loaded font: {font_path}")
                 break
             except (OSError, IOError):
                 continue
         
         # 如果所有TrueType字体都加载失败，使用默认字体
         if not font_loaded:
+            print("Debug: WARNING - No CJK fonts found, falling back to default font. Chinese characters may not display correctly!")
             try:
-                # 尝试使用PIL的默认字体，但设置大小
+                # 尝试使用PIL的默认字体
                 font = ImageFont.load_default()
-                # 注意：PIL的默认字体不支持大小设置，所以我们需要特殊处理
             except:
                 font = ImageFont.load_default()
         
