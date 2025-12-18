@@ -1,12 +1,12 @@
-version: 1.2.0
+version: 1.5.0
 type: plugin
 author: xwang152-jack
-name: image-bbox
+name: draw_boxes
 label:
-  en_US: Image Bounding Box
-  ja_JP: Image Bounding Box
-  zh_Hans: Image Bounding Box
-  pt_BR: Image Bounding Box
+  en_US: Draw Boxes
+  ja_JP: Draw Boxes
+  zh_Hans: Draw Boxes
+  pt_BR: Draw Boxes
 description:
   en_US: A plugin for drawing bounding boxes and labels on images with annotation data visualization
   ja_JP: A plugin for drawing bounding boxes and labels on images with annotation data visualization
@@ -18,9 +18,9 @@ resource:
   permission: {}
 plugins:
   tools:
-    - provider/image-bbox.yaml
+    - provider/draw_boxes.yaml
 meta:
-  version: 1.0.0
+  version: 1.5.0
   arch:
     - amd64
     - arm64

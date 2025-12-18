@@ -1,10 +1,10 @@
 identity:
   author: "xwang152-jack"
-  name: "image-bbox"
+  name: "draw_boxes"
   label:
-    en_US: "Image Bounding Box"
-    zh_Hans: "Image Bounding Box"
-    pt_BR: "Image Bounding Box"
+    en_US: "draw_boxes"
+    zh_Hans: "draw_boxes"
+    pt_BR: "draw_boxes"
   description:
     en_US: "A plugin for drawing bounding boxes and labels on images with annotation data visualization"
     zh_Hans: "图像标注绘制工具插件，用于在图像上绘制边界框和标签，实现标注数据可视化"
@@ -54,7 +54,7 @@ identity:
 #         en_US: "Access Token"
 
 tools:
-  - tools/image_bbox.yaml
+  - tools/draw_boxes.yaml
 extra:
   python:
-    source: provider/image-bbox.py
+    source: provider/draw_boxes.py

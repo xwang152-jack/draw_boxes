@@ -1,10 +1,10 @@
 identity:
-  name: "image-bbox"
+  name: "draw_boxes"
   author: "xwang152-jack"
   label:
-    en_US: "Image Bounding Box"
-    zh_Hans: "Image Bounding Box"
-    pt_BR: "Image Bounding Box"
+    en_US: "Draw Boxes"
+    zh_Hans: "Draw Boxes"
+    pt_BR: "Draw Boxes"
 description:
   human:
     en_US: "A plugin for drawing bounding boxes and labels on images with annotation data visualization"
@@ -121,4 +121,4 @@ parameters:
     form: form
 extra:
   python:
-    source: tools/image_bbox.py
+    source: tools/draw_boxes.py

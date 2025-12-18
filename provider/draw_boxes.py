@@ -20,7 +20,7 @@ class ImageMarkProvider(ToolProvider):
     #########################################################################################
     # def _oauth_get_authorization_url(self, redirect_uri: str, system_credentials: Mapping[str, Any]) -> str:
     #     """
-    #     Generate the authorization URL for image-bbox OAuth.
+    #     Generate the authorization URL for draw_boxes OAuth.
     #     """
     #     try:
     #         """

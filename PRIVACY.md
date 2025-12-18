@@ -1,13 +1,13 @@
 # Privacy Policy
 
-## Image Bounding Box Plugin Privacy Policy
+## draw_boxes Plugin Privacy Policy
 
 **Effective Date:** September 2025  
 **Version:** 1.0
 
 ### Overview
 
-This privacy policy explains how the Image Bounding Box Plugin (hereinafter referred to as "this plugin") collects, uses, stores, and protects user data. We are committed to protecting user privacy and ensuring data security.
+This privacy policy explains how the draw_boxes Plugin (hereinafter referred to as "this plugin") collects, uses, stores, and protects user data. We are committed to protecting user privacy and ensuring data security.
 
 ### Data Collection
 

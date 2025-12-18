@@ -1,4 +1,4 @@
-# Image Bounding Box Plugin
+# draw_boxes Plugin
 
 **Author:** xwang152-jack  
 **Version:** 1.2.0  
@@ -61,7 +61,7 @@ A Dify tool plugin for image annotation visualization. It receives image files a
 
 ## Usage in Dify Workflow
 
-1. Add the "Image Bounding Box" tool node to your workflow
+1. Add the `draw_boxes` tool node to your workflow
 2. Connect an image file to the `image_file` parameter
 3. Provide annotation JSON from a vision model or other source
 4. The tool outputs an annotated image with bounding boxes
