@@ -435,9 +435,13 @@ class ImageMarkTool(Tool):
         if not font_loaded:
             print("Debug: WARNING - No CJK fonts found, falling back to default font. Chinese characters may not display correctly!")
             try:
-                # 尝试使用PIL的默认字体
+                # 尝试使用PIL的默认字体，Pillow >= 10.0.0 支持 size 参数
+                font = ImageFont.load_default(size=actual_font_size)
+            except TypeError:
+                # 旧版本 Pillow 不支持 size 参数
                 font = ImageFont.load_default()
-            except:
+            except Exception as e:
+                print(f"Debug: Failed to load default font with size: {e}")
                 font = ImageFont.load_default()
         
         for annotation in annotations:

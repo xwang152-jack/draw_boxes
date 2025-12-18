@@ -1,7 +1,7 @@
 # draw_boxes Plugin
 
 **Author:** xwang152-jack  
-**Version:** 1.2.0  
+**Version:** 1.5.1  
 **Type:** Tool Plugin  
 **Contact:** xwang152@163.com
 
@@ -127,6 +127,10 @@ pip install -r requirements.txt
 See [PRIVACY.md](PRIVACY.md) for privacy policy.
 
 ## Changelog
+
+### v1.5.1 (2025-12-18)
+- Fixed an issue where label font size adjustments were ignored when using the fallback default font
+- Updated default font loading to support dynamic sizing (requires Pillow>=10.0.0)
 
 ### v1.2.0 (2025-12-07)
 - **Breaking Change**: Changed `image_data` (string) to `image_file` (file type) for better Dify integration
