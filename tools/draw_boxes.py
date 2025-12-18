@@ -1,9 +1,11 @@
 import base64
 import json
 import requests
+import os
 from io import BytesIO
 from collections.abc import Generator
 from typing import Any
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 from dify_plugin import Tool
@@ -365,6 +367,39 @@ class ImageMarkTool(Tool):
             print(f"Debug: _load_image_from_url exception: {e}")
             return None
     
+    def _download_font(self) -> str | None:
+        """下载开源中文字体 (WenQuanYi Micro Hei)"""
+        try:
+            # 确定字体存放路径
+            current_dir = Path(__file__).parent.parent
+            assets_dir = current_dir / "_assets"
+            if not assets_dir.exists():
+                assets_dir.mkdir(parents=True, exist_ok=True)
+            
+            font_path = assets_dir / "wqy-microhei.ttc"
+            
+            # 如果字体已存在，直接返回路径
+            if font_path.exists():
+                return str(font_path)
+                
+            print(f"Debug: Downloading font to {font_path}...")
+            # 使用 GitHub Raw 加速地址或 CDN
+            font_url = "https://github.com/anthonyfok/fonts-wqy-microhei/raw/master/wqy-microhei.ttc"
+            
+            response = requests.get(font_url, timeout=60, stream=True)
+            response.raise_for_status()
+            
+            with open(font_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+                    
+            print("Debug: Font download completed successfully")
+            return str(font_path)
+            
+        except Exception as e:
+            print(f"Debug: Failed to download font: {e}")
+            return None
+
     def _draw_annotations(self, image: Image.Image, annotations: list, 
                          box_color: str, text_color: str, line_width: int, font_size: int, coordinate_type: str = 'relative') -> Image.Image:
         """在图像上绘制标注"""
@@ -396,6 +431,8 @@ class ImageMarkTool(Tool):
         
         # 尝试多种字体路径 - 优先使用支持中文的字体
         font_paths = [
+            # 自动下载的本地字体 (最高优先级)
+            str(Path(__file__).parent.parent / "_assets" / "wqy-microhei.ttc"),
             # 支持中文的字体 (优先)
             "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
             "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
@@ -431,7 +468,19 @@ class ImageMarkTool(Tool):
             except (OSError, IOError):
                 continue
         
-        # 如果所有TrueType字体都加载失败，使用默认字体
+        # 如果所有TrueType字体都加载失败，尝试下载并使用自带字体
+        if not font_loaded:
+            print("Debug: No system fonts found, trying to download fallback font...")
+            downloaded_font = self._download_font()
+            if downloaded_font:
+                try:
+                    font = ImageFont.truetype(downloaded_font, actual_font_size)
+                    font_loaded = True
+                    print(f"Debug: Successfully loaded downloaded font: {downloaded_font}")
+                except Exception as e:
+                    print(f"Debug: Failed to load downloaded font: {e}")
+
+        # 如果仍然失败，使用默认字体
         if not font_loaded:
             print("Debug: WARNING - No CJK fonts found, falling back to default font. Chinese characters may not display correctly!")
             try:

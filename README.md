@@ -1,7 +1,7 @@
 # draw_boxes Plugin
 
 **Author:** xwang152-jack  
-**Version:** 1.5.1  
+**Version:** 1.5.2  
 **Type:** Tool Plugin  
 **Contact:** xwang152@163.com
 
@@ -127,6 +127,10 @@ pip install -r requirements.txt
 See [PRIVACY.md](PRIVACY.md) for privacy policy.
 
 ## Changelog
+
+### v1.5.2 (2025-12-18)
+- Added automatic Chinese font downloading (WenQuanYi Micro Hei) to fix "tofu" character issues in containerized environments
+- Improved font fallback mechanism
 
 ### v1.5.1 (2025-12-18)
 - Fixed an issue where label font size adjustments were ignored when using the fallback default font
